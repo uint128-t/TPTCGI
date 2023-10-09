@@ -29,14 +29,15 @@
             }
             function generate(){
                 let res = document.getElementById("result")
-                res.innerText = ""
+                let script = ""
                 for (let x=0;x<w;x++){
                     for (let y=0;y<h;y++){
                         let pixel=canvas.getImageData(x,y, 1, 1, {colorSpace:"srgb"}).data
                         let color = 0xff + pixel[0]<<4 + pixel[1]<<2 + pixel[0]
-                        res.innerText += `tpt.set_property("dcolor", ${color}, tpt.create(${x+4}, ${y+4}, "DMND"))`
+                        script += `tpt.set_property("dcolor", ${color}, tpt.create(${x+4}, ${y+4}, "DMND"));`
                     }
                 }
+                res.innerText = script
             }
         </script>
     </body>
