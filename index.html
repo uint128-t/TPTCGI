@@ -1,44 +1,77 @@
 <!DOCTYPE html>
 <html>
-    <head><title>TPT CGI Generator</title></head>
+
+    <head>
+        <title>TPT CGI Generator</title>
+    </head>
+
     <body>
         <!--608 x 380-->
-        <input type="number" step="0.05" onchange="draw(document.getElementById('filein'),this.value)" id="scale"/>
-        <input type="file" onchange="draw(this,1);document.getElementById('scale').value = 1;" id="filein"/>
+        <input type="number" step="0.05" onchange="draw(document.getElementById('filein'),this.value)" id="scale" />
+        <input type="file" onchange="draw(this,1);document.getElementById('scale').value = 1;" id="filein" />
         <button onclick="generate()">Generate script [BAN WARNING]</button>
         <br>
-        <textarea id="result" placeholder="Result script here"></textarea>
+        <a id="result" href="javascript:alert('No script generated')" download="image.lua">Save script</a>
         <br>
+        <div id="progress"></div>
         <canvas width="608" height="380" id="canvas" style="border:1px solid black"></canvas>
         <script>
-            var w=0
-            var h=0
-            var canvas = document.getElementById("canvas").getContext("2d", {willReadFrequently: true})
-            function draw(elem,s){
-                console.log(s)
+            var w = 0
+            var h = 0
+            var canvas = document.getElementById("canvas").getContext("2d")
+            var lastObjectURL = ""
+
+            function draw(elem, s) {
                 let image = new Image
-                image.onload = ()=>{
-                    console.log(s)
-                    canvas.clearRect(0,0,608,380);
-                    w = image.width*s
-                    h = image.height*s
-                    canvas.drawImage(image,0,0,image.width*s,image.height*s)
+                image.onload = () => {
+                    canvas.clearRect(0, 0, 608, 380);
+                    w = Math.min(image.width * s,608)
+                    h = Math.min(image.height * s,380)
+                    canvas.drawImage(image, 0, 0, image.width * s, image.height * s)
                     URL.revokeObjectURL(image.src)
                 }
                 image.src = URL.createObjectURL(elem.files[0])
             }
-            function generate(){
+
+            function generate() {
+                var blob = new Blob([document.querySelector('#worker1').textContent], {
+                    type: "text/javascript"
+                })
                 let res = document.getElementById("result")
-                let script = ""
-                for (let x=0;x<w;x++){
-                    for (let y=0;y<h;y++){
-                        let pixel=canvas.getImageData(x,y, 1, 1, {colorSpace:"srgb"}).data
-                        let color = 0xff + pixel[0]<<4 + pixel[1]<<2 + pixel[0]
-                        script += `tpt.set_property("dcolor", ${color}, tpt.create(${x+4}, ${y+4}, "DMND"))\n`
+                let pixel = canvas.getImageData(0, 0, w, h, {colorSpace: "srgb"}).data
+                var worker = new Worker(window.URL.createObjectURL(blob))
+                worker.postMessage([pixel,w,h])
+                worker.onmessage = (d)=>{
+                    let data = d.data
+                    if (typeof data == "string"){
+                        document.getElementById("progress").innerText = data.slice(8)
+                    } else{
+                        // handle BLOB
+                        if (lastObjectURL!="")
+                            URL.revokeObjectURL(lastObjectURL)
+                        lastObjectURL = URL.createObjectURL(data)
+                        res.href = lastObjectURL
                     }
                 }
-                res.innerText = script
+            }
+        </script>
+        <script id="worker1">
+            self.onmessage = (d)=>{
+                let data = d.data
+                let pixel = data[0]
+                let w = data[1]
+                let h = data[2]
+                let script = []
+                for (let x = 0; x < w; x++) {
+                    for (let y = 0; y < h; y++) {
+                        let color = 0xff + pixel[x + y * h] << 4 + pixel[x + y * h + 1] << 2 + pixel[x + y * h + 2]
+                        script.push(`tpt.set_property("dcolor", ${color}, tpt.create(${x+4}, ${y+4}, "DMND"))`)
+                    }
+                    self.postMessage(`PROGRESSProgress: ${x}/${w} Pixel: ${x*w}/${w*h}`)
+                }
+                self.postMessage(new Blob([script.join("\n")]))
             }
         </script>
     </body>
+
 </html>
