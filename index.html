@@ -3,7 +3,24 @@
     <head><title>TPT CGI Generator</title></head>
     <body>
         <!--611 x 383-->
-        <input type="file" onchange="draw(this)"/>
-        <canvas width="611" height="383"></canvas>
+        <input type="number" step="0.05" onchange="draw(document.getElementById('filein'),this.value)" id="scale"/>
+        <input type="file" onchange="draw(this,0.1);document.getElementById('scale').value = 1;" id="filein"/>
+        <button onclick="generate()">Generate script [BAN WARNING]</button>
+        <br>
+        <textarea id="result" placeholder="Result script here"></textarea>
+        <br>
+        <canvas width="611" height="383" id="canvas"></canvas>
+        <script>
+            var canvas = document.getElementById("canvas").getContext("2d")
+            function draw(elem,s){
+                let image = new Image
+                image.onload = ()=>{
+                    canvas.clearRect(0,0,611,383);
+                    canvas.drawImage(image,0,0,image.width*s,image.height*s)
+                    URL.revokeObjectURL(image.src)
+                }
+                image.src = URL.createObjectURL(elem.files[0])
+            }
+        </script>
     </body>
 </html>
