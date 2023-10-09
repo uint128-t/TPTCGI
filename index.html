@@ -34,7 +34,7 @@
                     for (let y=0;y<h;y++){
                         let pixel=canvas.getImageData(x,y, 1, 1, {colorSpace:"srgb"}).data
                         let color = 0xff + pixel[0]<<4 + pixel[1]<<2 + pixel[0]
-                        script += `tpt.set_property("dcolor", ${color}, tpt.create(${x+4}, ${y+4}, "DMND"));`
+                        script += `tpt.set_property("dcolor", ${color}, tpt.create(${x+4}, ${y+4}, "DMND"))\n`
                     }
                 }
                 res.innerText = script
