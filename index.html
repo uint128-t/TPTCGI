@@ -4,22 +4,39 @@
     <body>
         <!--611 x 383-->
         <input type="number" step="0.05" onchange="draw(document.getElementById('filein'),this.value)" id="scale"/>
-        <input type="file" onchange="draw(this,0.1);document.getElementById('scale').value = 1;" id="filein"/>
+        <input type="file" onchange="draw(this,1);document.getElementById('scale').value = 1;" id="filein"/>
         <button onclick="generate()">Generate script [BAN WARNING]</button>
         <br>
         <textarea id="result" placeholder="Result script here"></textarea>
         <br>
-        <canvas width="611" height="383" id="canvas"></canvas>
+        <canvas width="611" height="383" id="canvas" style="border:1px solid black"></canvas>
         <script>
+            var w=0
+            var h=0
             var canvas = document.getElementById("canvas").getContext("2d")
             function draw(elem,s){
+                console.log(s)
                 let image = new Image
                 image.onload = ()=>{
+                    console.log(s)
                     canvas.clearRect(0,0,611,383);
+                    w = image.width*s
+                    h = image.height*s
                     canvas.drawImage(image,0,0,image.width*s,image.height*s)
                     URL.revokeObjectURL(image.src)
                 }
                 image.src = URL.createObjectURL(elem.files[0])
+            }
+            function generate(){
+                let res = document.getElementById("result")
+                res.innerText = ""
+                for (let x=0;x<w;x++){
+                    for (let y=0;y<h;y++){
+                        let pixel=canvas.getImageData(x,y, 1, 1, {colorSpace:"srgb"})
+                        let color = 0xff + pixel[0]<<4 + pixel[1]<<2 + pixel[0]
+                        res.innerText += `tpt.set_property("dcolor", ${color}, tpt.create(${x}, ${y}, "DMND"))`
+                    }
+                }
             }
         </script>
     </body>
