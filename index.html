@@ -6,7 +6,6 @@
     </head>
 
     <body>
-        SITE IS WIP! UNFINISHED
         <!--608 x 380-->
         <input type="number" step="0.05" onchange="draw(document.getElementById('filein'),this.value)" id="scale" />
         <input type="file" onchange="draw(this,1);document.getElementById('scale').value = 1;" id="filein" />
@@ -33,7 +32,6 @@
                 }
                 image.src = URL.createObjectURL(elem.files[0])
             }
-
             function generate() {
                 var blob = new Blob([document.querySelector('#worker1').textContent], {
                     type: "text/javascript"
@@ -57,18 +55,28 @@
             }
         </script>
         <script id="worker1">
+            function RGB2TPTINT(r,g,b){
+                let color = 0xff
+                color = color*256 + r
+                color = color*256 + g
+                color = color*256 + b
+                return color;
+            }
             self.onmessage = (d)=>{
                 let data = d.data
                 let pixel = data[0]
                 let w = data[1]
                 let h = data[2]
                 let script = []
-                for (let x = 0; x < w; x++) {
-                    for (let y = 0; y < h; y++) {
-                        let color = 0xff + pixel[x + y * h] << 4 + pixel[x + y * h + 1] << 2 + pixel[x + y * h + 2]
+                let currentvalue = 0;
+                let NextRGBValue = ()=>pixel[currentvalue++];
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        let color = RGB2TPTINT(NextRGBValue(),NextRGBValue(),NextRGBValue());
+                        NextRGBValue();
                         script.push(`tpt.set_property("dcolor", ${color}, tpt.create(${x+4}, ${y+4}, "DMND"))`)
                     }
-                    self.postMessage(`PROGRESSProgress: ${x}/${w} Pixel: ${x*w}/${w*h}`)
+                    self.postMessage(`PROGRESSProgress: ${y}/${h} Pixel: ${y*w}/${h*w}`)
                 }
                 self.postMessage(new Blob([script.join("\n")]))
             }
