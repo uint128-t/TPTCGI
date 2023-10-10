@@ -77,7 +77,7 @@
                         NextRGBValue();
                         script.push(`tpt.set_property("dcolor", ${color}, tpt.create(${x+4}, ${y+4}, "DMND"))`)
                     }
-                    self.postMessage(`PROGRESSProgress: ${y}/${h} Pixel: ${y*w}/${h*w}`)
+                    self.postMessage(`PROGRESSProgress: ${y+1}/${h} Pixel: ${y*w+w}/${h*w}`)
                 }
                 self.postMessage(new Blob([script.join("\n")]))
             }
