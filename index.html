@@ -68,14 +68,14 @@
                 let pixel = data[0]
                 let w = data[1]
                 let h = data[2]
-                let script = []
+                let script = ["local c=0","local x=0","local y=0"]
                 let currentvalue = 0;
                 let NextRGBValue = ()=>pixel[currentvalue++];
                 for (let y = 0; y < h; y++) {
                     for (let x = 0; x < w; x++) {
                         let color = RGB2TPTINT(NextRGBValue(),NextRGBValue(),NextRGBValue());
                         NextRGBValue();
-                        script.push(`tpt.set_property("dcolor", ${color}, tpt.create(${x+4}, ${y+4}, "DMND"))`)
+                        script.push(`x=${x+4};y=${y+4};c=${color};tpt.set_property("dcolor", c, tpt.create(x, y, "DMND"))`)
                     }
                     self.postMessage(`PROGRESSProgress: ${y+1}/${h} Pixel: ${y*w+w}/${h*w}`)
                 }
