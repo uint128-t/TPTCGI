@@ -1,2 +1,2 @@
-# TPTCGI.github.io
-TPT CGI generator
+# TPT Computer Generated Imagery
+Utility for converting images into Lua Powder Toy scripts
