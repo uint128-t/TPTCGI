@@ -26,8 +26,8 @@
                 let image = new Image
                 image.onload = () => {
                     canvas.clearRect(0, 0, 608, 380);
-                    w = Math.min(image.width * s,608)
-                    h = Math.min(image.height * s,380)
+                    w = Math.min(Math.ceil(image.width * s),608)
+                    h = Math.min(Math.ceil(image.height * s),380)
                     canvas.drawImage(image, 0, 0, image.width * s, image.height * s)
                     URL.revokeObjectURL(image.src)
                 }
