@@ -56,8 +56,8 @@
             }
         </script>
         <script id="worker1">
-            function RGB2TPTINT(r,g,b){
-                let color = 0xff
+            function RGB2TPTINT(r,g,b,a){
+                let color = a
                 color = color*256 + r
                 color = color*256 + g
                 color = color*256 + b
@@ -73,8 +73,15 @@
                 let NextRGBValue = ()=>pixel[currentvalue++];
                 for (let y = 0; y < h; y++) {
                     for (let x = 0; x < w; x++) {
-                        let color = RGB2TPTINT(NextRGBValue(),NextRGBValue(),NextRGBValue());
-                        NextRGBValue();
+                        let red = NextRGBValue()
+                        let green = NextRGBValue()
+                        let blue = NextRGBValue()
+                        let alpha = NextRGBValue()
+                        if (alpha==0)continue;
+                        red = Math.floor((alpha/255)*red)
+                        green = Math.floor((alpha/255)*green)
+                        blue = Math.floor((alpha/255)*blue)
+                        let color = RGB2TPTINT(red,green,blue,255)
                         script.push(`x=${x+4};y=${y+4};c=${color};tpt.set_property("dcolor", c, tpt.create(x, y, "DMND"))`)
                     }
                     self.postMessage(`PROGRESSProgress: ${y+1}/${h} Pixel: ${y*w+w}/${h*w}`)
@@ -83,5 +90,4 @@
             }
         </script>
     </body>
-
 </html>
