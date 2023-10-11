@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
     <head>
         <title>TPT CGI Generator</title>
     </head>
@@ -16,6 +15,69 @@
         <br>
         <div id="progress"></div>
         <canvas width="608" height="380" id="canvas" style="border:1px solid black"></canvas>
+        <script id="worker1">
+            function RGB2TPTINT(r, g, b, a) {
+                let color = a
+                color = color * 256 + r
+                color = color * 256 + g
+                color = color * 256 + b
+                return color;
+            }
+            self.onmessage = (d) => {
+                if (!(typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope)){
+                    throw "error: not running as worker"
+                }
+                let data = d.data
+                let pixel = data[0]
+                let w = data[1]
+                let h = data[2]
+                let script = `local data="`
+                let currentvalue = 0;
+                let NextRGBValue = () => pixel[currentvalue++];
+                for (let y = 0; y < h; y++) {
+                    for (let x = 0; x < w; x++) {
+                        let red = NextRGBValue()
+                        let green = NextRGBValue()
+                        let blue = NextRGBValue()
+                        let alpha = NextRGBValue()
+                        red = Math.floor((alpha / 255) * red)
+                        green = Math.floor((alpha / 255) * green)
+                        blue = Math.floor((alpha / 255) * blue)
+                        let color = RGB2TPTINT(red, green, blue, 255)
+                        script+=`${color},`
+                    }
+                    self.postMessage(`PROGRESSProgress: ${y+1}/${h} Pixel: ${y*w+w}/${h*w}`)
+                }
+                script+=`"`
+                script+=[
+                    ``,
+                    `local w = ${w}`,
+                    `local h = ${h}`,
+                    `local pos = 1`,
+                    `function NextValue()`,
+                    `   local value = 0`,
+                    `   local char = '0'`,
+                    `   while char~=',' do`,
+                    `       value = value*10 + tonumber(char)`,
+                    `       char = data:sub(pos,pos)`,
+                    `       pos = pos + 1`,
+                    `   end`,
+                    `   return value`,
+                    `end`,
+                    `for y=0,h-1 do`,
+                    `   for x=0,w-1 do`,
+                    `       local color = NextValue()`,
+                    `       if color==0xff000000 then`,
+                    `           goto continue`,
+                    `       end`,
+                    `       tpt.set_property("dcolor", color, tpt.create(x,y,"DMND"))`,
+                    `       ::continue::`,
+                    `   end`,
+                    `end`
+                ].join("\n")
+                self.postMessage(new Blob([script]))
+            }
+        </script>
         <script>
             var w = 0
             var h = 0
@@ -25,7 +87,7 @@
             function draw(elem, s) {
                 let image = new Image
                 image.onload = () => {
-                    canvas.clearRect(0, 0, 608, 380);
+                    canvas.clearRect(0, 0, 608, 380)
                     w = Math.min(Math.ceil(image.width * s),608)
                     h = Math.min(Math.ceil(image.height * s),380)
                     canvas.drawImage(image, 0, 0, image.width * s, image.height * s)
@@ -33,13 +95,15 @@
                 }
                 image.src = URL.createObjectURL(elem.files[0])
             }
+
+            var blob = new Blob([document.querySelector('#worker1').textContent], {
+                type: "text/javascript"
+            })  
+            var worker = new Worker(window.URL.createObjectURL(blob))
+
             function generate() {
-                var blob = new Blob([document.querySelector('#worker1').textContent], {
-                    type: "text/javascript"
-                })
                 let res = document.getElementById("result")
                 let pixel = canvas.getImageData(0, 0, w, h, {colorSpace: "srgb"}).data
-                var worker = new Worker(window.URL.createObjectURL(blob))
                 worker.postMessage([pixel,w,h])
                 worker.onmessage = (d)=>{
                     let data = d.data
@@ -53,40 +117,6 @@
                         res.href = lastObjectURL
                     }
                 }
-            }
-        </script>
-        <script id="worker1">
-            function RGB2TPTINT(r,g,b,a){
-                let color = a
-                color = color*256 + r
-                color = color*256 + g
-                color = color*256 + b
-                return color;
-            }
-            self.onmessage = (d)=>{
-                let data = d.data
-                let pixel = data[0]
-                let w = data[1]
-                let h = data[2]
-                let script = ["local c=0","local x=0","local y=0"]
-                let currentvalue = 0;
-                let NextRGBValue = ()=>pixel[currentvalue++];
-                for (let y = 0; y < h; y++) {
-                    for (let x = 0; x < w; x++) {
-                        let red = NextRGBValue()
-                        let green = NextRGBValue()
-                        let blue = NextRGBValue()
-                        let alpha = NextRGBValue()
-                        if (alpha==0)continue;
-                        red = Math.floor((alpha/255)*red)
-                        green = Math.floor((alpha/255)*green)
-                        blue = Math.floor((alpha/255)*blue)
-                        let color = RGB2TPTINT(red,green,blue,255)
-                        script.push(`x=${x+4};y=${y+4};c=${color};tpt.set_property("dcolor", c, tpt.create(x, y, "DMND"))`)
-                    }
-                    self.postMessage(`PROGRESSProgress: ${y+1}/${h} Pixel: ${y*w+w}/${h*w}`)
-                }
-                self.postMessage(new Blob([script.join("\n")]))
             }
         </script>
     </body>
