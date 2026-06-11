@@ -43,7 +43,7 @@
                 let h = data[2]
                 let tr = data[3]
                 let el = data[4]
-                let script = `local data="`
+                let script = `local data={`
                 let currentvalue = 0;
                 let NextRGBValue = () => pixel[currentvalue++];
                 for (let y = 0; y < h; y++) {
@@ -71,21 +71,15 @@
                     }
                     self.postMessage(`PROGRESSProgress: ${y+1}/${h} Pixel: ${y*w+w}/${h*w}`)
                 }
-                script+=`"`
+                script+=`}`
                 script+=[
                     ``,
                     `local w = ${w}`,
                     `local h = ${h}`,
-                    `local pos = 1`,
+                    `local pos = 0`,
                     `function NextValue()`,
-                    `   local value = 0`,
-                    `   local char = '0'`,
-                    `   while char~=',' do`,
-                    `       value = value*10 + tonumber(char)`,
-                    `       char = data:sub(pos,pos)`,
-                    `       pos = pos + 1`,
-                    `   end`,
-                    `   return value`,
+                    `   pos=pos+1`,
+                    `   return data[pos]`,
                     `end`,
                     `for y=4,h+3 do`,
                     `   for x=4,w+3 do`,
